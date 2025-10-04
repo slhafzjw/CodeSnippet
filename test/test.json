@@ -1,0 +1,7 @@
+{
+  "tags": [
+    "ByteBuddy",
+    "动态代理"
+  ],
+  "description": "通过ByteBuddy创建动态代理类的示例"
+}

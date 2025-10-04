@@ -1,0 +1,8 @@
+/CodeSnippetRofi/.idea/
+/CodeSnippetRofi/.venv/
+/CodeSnippetDaemon/.idea/
+/CodeSnippetDaemon/.mvn/
+/CodeSnippetDaemon/target/
+/CodeSnippetDaemon/dependency-reduced-pom.xml
+/CodeSnippetDaemon/pom.xml
+/.idea/

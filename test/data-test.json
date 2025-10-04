@@ -1,0 +1,8 @@
+{
+  "action": "ADD",
+  "data": {
+    "name": "ExtractJSON",
+    "language": "Java",
+    "content": "public static String extractJson(String jsonStr) {\n    jsonStr = jsonStr.replace(\"“\", \"\\\"\").replace(\"”\", \"\\\"\");\n    int start = jsonStr.indexOf(\"{\");\n    int end = jsonStr.lastIndexOf(\"}\");\n    if (start != -1 && end != -1 && start < end) {\n        return jsonStr.substring(start, end + 1);\n    }\n    return jsonStr;\n}"
+  }
+}
