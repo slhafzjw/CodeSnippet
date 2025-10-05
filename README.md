@@ -1,4 +1,4 @@
-~~# CodeSnippet
+# CodeSnippet
 
 使用 Rofi 前端 + Java 守护进程管理代码片段，支持 Markdown 存储、跨平台同步和快速索引。
 ## 项目概述
