@@ -1,4 +1,4 @@
-# CodeSnippetDaemon
+~~# CodeSnippet
 
 使用 Rofi 前端 + Java 守护进程管理代码片段，支持 Markdown 存储、跨平台同步和快速索引。
 ## 项目概述
@@ -26,9 +26,17 @@
 ### 前端
 - 默认使用 Rofi 作为启动器，已涵盖后端所需的所有操作类型
 - 借助 Python 完成复杂操作
-- 涉及到代码片段的编辑行为时，将通过调用 nvim 来编辑临时文件，编辑完毕后将发送请求至守护进程
+- 涉及到代码片段的编辑行为时，默认将通过调用 nvim 来编辑临时文件，编辑完毕后将发送请求至守护进程
 
-## 使用方法
+## 快速开始
+### 安装
+1. 下载RELEASE
+2. 下载所需库
+   - `pip install python-rofi`
+2. 解压，目录结构如下:
+    > ![目录结构](doc/resource/dir.png)
+
+### 使用
 1. 设置环境变量
    - CODE_SNIPPET_CONF
      - 配置文件目录
@@ -42,11 +50,21 @@
      - AI服务商提供的 base_url
    - CODE_SNIPPET_MODEL
      - 所用模型名称
+   - CODE_SNIPPET_EDITOR (可选，若未指定则使用nvim)
+     - 所用的编辑器，默认使用nvim
+     - Typora 好像也可以编辑，只是会额外打开一个终端窗口
+     - 其他编辑器未测试
    - CODE_SNIPPET_ROFI (可选，若未指定则使用默认 rofi)
      - 指定的 rofi 脚本，可以添加参数，比如: `rofi -theme ~/.config/rofi/launchers/type-4/style-1.rasi`
 
 2. 启动 Java 守护进程
+   - `java -jar daemon/CodeSnippetDaemon-1.0.jar`
 3. 启动 rofi 脚本
+   - `python rofi/launcher.py`
+
+> 已将打开的编辑器窗口的class属性设置为`code_snippet_editor`，如果使用的是 Hyprland 等 wm，可以据此对打开的编辑器窗口设置所需规则
+> 
+> 该部分只针对一些常见的终端应用进行了设置，如有需要，可以自行编辑文件: [file_helper(第205行开始)](CodeSnippetRofi/helper/file_helper.py)
 
 
 ## 说明

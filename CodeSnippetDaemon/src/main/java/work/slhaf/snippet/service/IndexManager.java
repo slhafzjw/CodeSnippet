@@ -1,12 +1,16 @@
 package work.slhaf.snippet.service;
 
+import cn.hutool.core.bean.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 import work.slhaf.snippet.common.Constant;
 import work.slhaf.snippet.entity.db.Index;
 import work.slhaf.snippet.entity.file.ListEntity;
+import work.slhaf.snippet.entity.file.RebuildEntity;
 
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class IndexManager {
@@ -14,6 +18,7 @@ public class IndexManager {
     private static volatile IndexManager instance;
 
     private final Connection connection;
+    private final SnippetManager snippetManager = new SnippetManager();
 
     public static IndexManager getInstance() throws SQLException {
         if (instance == null) {
@@ -47,9 +52,16 @@ public class IndexManager {
         statement.close();
     }
 
-    public void rebuildIndex(Set<Index> indexSet) throws SQLException {
+    public void rebuildIndex() throws SQLException, IOException {
         log.info("重建索引数据库");
         resetIndex();
+        List<RebuildEntity> snippets = snippetManager.listAll();
+        Set<Index> indexSet = snippets.stream().map(entity -> {
+                    Index index = new Index();
+                    BeanUtil.copyProperties(entity, index);
+                    return index;
+                })
+                .collect(Collectors.toSet());
         for (Index index : indexSet) {
             add(index);
         }

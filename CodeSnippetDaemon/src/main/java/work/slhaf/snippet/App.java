@@ -1,10 +1,8 @@
 package work.slhaf.snippet;
 
-import cn.hutool.core.bean.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 import work.slhaf.snippet.common.Constant;
-import work.slhaf.snippet.entity.db.Index;
-import work.slhaf.snippet.entity.file.RebuildEntity;
+import work.slhaf.snippet.exception.LaunchCheckException;
 import work.slhaf.snippet.gateway.CodeSnippetSocketServer;
 import work.slhaf.snippet.service.IndexManager;
 import work.slhaf.snippet.service.SnippetManager;
@@ -13,9 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class App{
@@ -53,14 +48,7 @@ public class App{
         HashMap<String, String> sha2PathMD = snippetManager.getFileStatus();
         if (!sha2PathMD.equals(sha2PathDB)) {
             log.info("数据库与文件目录不一致，重建索引数据库");
-            List<RebuildEntity> snippets = snippetManager.listAll();
-            Set<Index> indexSet = snippets.stream().map(entity -> {
-                        Index index = new Index();
-                        BeanUtil.copyProperties(entity, index);
-                        return index;
-                    })
-                    .collect(Collectors.toSet());
-            indexManager.rebuildIndex(indexSet);
+            indexManager.rebuildIndex();
         }
         log.info("索引数据库检查通过");
     }
@@ -82,7 +70,7 @@ public class App{
 
         boolean ok = file.mkdirs();
         if (!ok) {
-            throw new RuntimeException("创建目录失败: " + dir);
+            throw new LaunchCheckException("创建目录失败: " + dir);
         } else {
             log.info("创建目录成功: {}", dir);
         }
@@ -91,7 +79,7 @@ public class App{
 
     private String getEnvOrThrow(String key) {
         String value = System.getenv(key);
-        if (value == null) throw new RuntimeException("未找到环境变量: " + key);
+        if (value == null) throw new LaunchCheckException("未找到环境变量: " + key);
         return value;
     }
 

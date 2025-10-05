@@ -8,6 +8,7 @@ import work.slhaf.snippet.common.Constant;
 import work.slhaf.snippet.entity.Snippet;
 import work.slhaf.snippet.entity.file.EditEntity;
 import work.slhaf.snippet.entity.file.RebuildEntity;
+import work.slhaf.snippet.exception.SnippetManagerException;
 
 import java.io.File;
 import java.io.FileReader;
@@ -52,7 +53,7 @@ public class SnippetManager {
         String markdown = snippet.toMarkdown();
         File file = path.toFile();
         if (file.exists()) {
-            throw new RuntimeException("文件已存在: " + file.getAbsolutePath());
+            throw new SnippetManagerException("文件已存在: " + file.getAbsolutePath());
         }
         file.getParentFile().mkdirs();
         Files.writeString(file.toPath(), markdown, StandardCharsets.UTF_8);
@@ -102,7 +103,7 @@ public class SnippetManager {
     public String sha(String filePath) {
         File file = new File(filePath);
         if (!file.exists()) {
-            throw new RuntimeException("文件不存在: " + filePath);
+            throw new SnippetManagerException("文件不存在: " + filePath);
         }
         return DigestUtil.sha256Hex(file);
     }

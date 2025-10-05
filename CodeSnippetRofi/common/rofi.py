@@ -25,11 +25,11 @@
 #
 
 import atexit
-from datetime import datetime
-from decimal import Decimal, InvalidOperation
 import signal
 import subprocess
 import time
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
 
 # Python < 3.2 doesn't provide a context manager interface for Popen.
 # Let's make our own wrapper if needed.

@@ -12,6 +12,7 @@ import work.slhaf.snippet.entity.file.AddEntity;
 import work.slhaf.snippet.entity.file.EditEntity;
 import work.slhaf.snippet.entity.file.ListEntity;
 import work.slhaf.snippet.entity.file.MetaDataEntity;
+import work.slhaf.snippet.exception.ActionHandleException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -53,16 +54,22 @@ public class ActionHandler {
 
     private SocketOutputData handleDelete(String path) throws SQLException, IOException {
         if (path.isEmpty()) {
-            return new SocketOutputData(Constant.Status.FAILED, "Path不能为空!");
+            throw new ActionHandleException("Path不能为空!");
         }
-        indexManager.delete(path);
-        snippetManager.delete(path);
-        return new SocketOutputData(Constant.Status.SUCCESS, "删除成功: " + path);
+        try {
+            indexManager.delete(path);
+            snippetManager.delete(path);
+            return new SocketOutputData(Constant.Status.SUCCESS, "删除成功: " + path);
+        } catch (Exception e) {
+            log.warn("代码片段删除失败，尝试重建索引");
+            indexManager.rebuildIndex();
+            throw new ActionHandleException("代码片段删除失败，路径: " + path, e);
+        }
     }
 
     private SocketOutputData handleEdit(EditEntity entity) throws IOException {
         if (entity.checkEmpty()) {
-            return new SocketOutputData(Constant.Status.FAILED, "Id、Path、代码内容均不能为空!");
+            throw new ActionHandleException("Id、Path、代码内容均不能为空!");
         }
         try {
             snippetManager.update(entity, SnippetManager.UpdateAction.EDIT);
@@ -75,14 +82,13 @@ public class ActionHandler {
             return new SocketOutputData(Constant.Status.SUCCESS, "文件编辑成功: " + entity.getPath());
         } catch (Exception e) {
             snippetManager.update(entity, SnippetManager.UpdateAction.FALLBACK);
-            log.error("文件编辑失败, 已回滚: {}", e.getLocalizedMessage());
-            return new SocketOutputData(Constant.Status.FAILED, e.getLocalizedMessage());
+            throw new ActionHandleException("文件编辑失败，已回滚: " + entity, e);
         }
     }
 
     private SocketOutputData handleAdd(AddEntity entity) throws IOException {
         if (entity.checkEmpty()) {
-            return new SocketOutputData(Constant.Status.FAILED, "Language、Name、代码片段内容均不能为空!");
+            throw new ActionHandleException("Language、Name、代码片段内容均不能为空!");
         }
         Path path = Path.of(System.getenv(Constant.Property.DIR), entity.getLanguage().toLowerCase(), entity.getName() + ".md");
         try {
@@ -94,8 +100,7 @@ public class ActionHandler {
             return new SocketOutputData(Constant.Status.SUCCESS, "代码片段已添加, 路径: " + path);
         } catch (Exception e) {
             Files.deleteIfExists(path);
-            log.error("文件添加失败: {}", e.getLocalizedMessage());
-            return new SocketOutputData(Constant.Status.FAILED, e.getLocalizedMessage());
+            throw new ActionHandleException("文件添加失败: " + entity, e);
         }
     }
 

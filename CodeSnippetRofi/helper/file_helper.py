@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from CodeSnippetRofi.common.constant import editor_class, code_snippet_editor
+
 from common.constant import template_add, template_edit
 from entity.result import ActionResult
 from helper.api_helper import run_edit, run_add
@@ -201,23 +203,23 @@ def _open_with_nvim(file_path: str) -> None:
 
     # 根据终端类型添加特定参数
     if name == 'alacritty':
-        cmd.extend(['--class', 'floating-nvim', '-e', 'nvim', file_path])
+        cmd.extend(['--class', editor_class, '-e', code_snippet_editor, file_path])
     elif name == 'kitty':
-        cmd.extend(['--class', 'floating-nvim', 'nvim', file_path])
+        cmd.extend(['--class', editor_class, code_snippet_editor, file_path])
     elif name == 'foot':
-        cmd.extend(['-a', 'floating-nvim', 'nvim', file_path])
+        cmd.extend(['-a', editor_class, code_snippet_editor, file_path])
     elif name == 'wezterm':
-        cmd.extend(['start', '--class', 'floating-nvim', '--', 'nvim', file_path])
+        cmd.extend(['start', '--class', editor_class, '--', code_snippet_editor, file_path])
     elif name.startswith('gnome-terminal'):
-        cmd.extend(['--class=floating-nvim', '--', 'nvim', file_path])
+        cmd.extend([f'--class={editor_class}', '--', code_snippet_editor, file_path])
     elif name == 'konsole':
-        cmd.extend(['--class', 'floating-nvim', '-e', 'nvim', file_path])
+        cmd.extend(['--class', editor_class, '-e', code_snippet_editor, file_path])
     elif name == 'urxvt':
-        cmd.extend(['-name', 'floating-nvim', '-e', 'nvim', file_path])
+        cmd.extend(['-name', editor_class, '-e', code_snippet_editor, file_path])
     elif name == 'xterm':
-        cmd.extend(['-class', 'floating-nvim', '-e', 'nvim', file_path])
+        cmd.extend(['-class', editor_class, '-e', code_snippet_editor, file_path])
     else:
-        cmd.extend(['-e', 'nvim', file_path])
+        cmd.extend(['-e', code_snippet_editor, file_path])
 
     # 阻塞执行命令，直到进程结束
     subprocess.run(cmd)
