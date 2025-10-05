@@ -2,14 +2,11 @@
 import hashlib
 import json
 import os
-import re
 import shutil
 import subprocess
 import tempfile
-from pathlib import Path
 
 from common.constant import editor_class, code_snippet_editor
-
 from common.constant import template_add, template_edit
 from entity.result import ActionResult
 from helper.api_helper import run_edit, run_add
@@ -73,13 +70,38 @@ def _parse_add(file_path: str) -> str:
     return _parse_add_text(text)
 
 
+import re
+from pathlib import Path
+from typing import List
+
+def _collect_indented_items(lines: List[str], start_idx: int) -> List[str]:
+    """
+    从 lines[start_idx+1:] 开始收集“缩进的 - item”：
+    - 只有匹配 ^[ \t]+-\s*(.+) 的行才被收集
+    - 遇到下一个顶层的 '-'（未缩进）或标题行（如 ## ...）或空行则停止
+    """
+    items = []
+    i = start_idx + 1
+    while i < len(lines):
+        line = lines[i]
+        m = re.match(r'^[ \t]+-\s*(.+?)\s*$', line)
+        if m:
+            val = m.group(1).strip()
+            if val:
+                items.append(val)
+            i += 1
+            continue
+        # 遇到新的顶层 bullet 或标题或空行 => 离开段落
+        if re.match(r'^\s*-\s*\S', line) or re.match(r'^\s*##\s+', line) or line.strip() == '':
+            break
+        break
+    return items
+
 def _prefill_edit(file_path: str, source_path: str, _id: str) -> None:
-    # 将原始文件内容与元信息写入模板占位
-    # 读取原文件
     src = Path(source_path).read_text(encoding='utf-8')
 
-    # 提取代码块（仅代码，不带多余模板）与语言
-    code_block = re.search(r"```(?:\[([^\]]*)\]|([A-Za-z0-9_+\-]+))?\s*\r?\n([\s\S]*?)```", src)
+    # 提取代码块（兼容 ```[Lang] 或 ```lang 或 ```）
+    code_block = re.search(r"```(?:\[\s*([^\]]+?)\s*\]|([A-Za-z0-9_+\-]+))?\s*\r?\n([\s\S]*?)```", src)
     language = ''
     code_only = ''
     if code_block:
@@ -89,26 +111,19 @@ def _prefill_edit(file_path: str, source_path: str, _id: str) -> None:
     if not code_only:
         code_only = src.strip()
 
-    # 从源文档的 MetaData 段提取 tags 与 description
-    tags: list[str] = []
+    # 从源文档的 MetaData 段提取 tags 与 description（**不再读取 Language**）
+    tags: List[str] = []
     desc = ''
-    # 定位 MetaData 段
     meta_match = re.search(r"##\s*MetaData([\s\S]*)", src)
     meta = meta_match.group(1) if meta_match else ''
     if meta:
-        # Tags 段
-        tags_section = re.search(r"-\s*Tags\s*([\s\S]*?)(?:\n-\s*Description|\Z)", meta)
-        if tags_section:
-            for line in tags_section.group(1).splitlines():
-                m = re.match(r"^\s*-\s*(.+)$", line)
-                if m:
-                    val = m.group(1).strip()
-                    if val:
-                        tags.append(val)
-        # Description 段
-        desc_section = re.search(r"-\s*Description\s*\n\s*-\s*(.+)", meta)
-        if desc_section:
-            desc = desc_section.group(1).strip()
+        lines = meta.splitlines()
+        for idx, line in enumerate(lines):
+            if re.match(r'^\s*-\s*Tags\s*$', line):
+                tags = _collect_indented_items(lines, idx)
+            elif re.match(r'^\s*-\s*Description\s*$', line):
+                desc_lines = _collect_indented_items(lines, idx)
+                desc = ' '.join(desc_lines).strip()
 
     # 若语言未能从代码块检测，则用路径上级名兜底
     if not language:
@@ -131,41 +146,64 @@ def _prefill_edit(file_path: str, source_path: str, _id: str) -> None:
     else:
         rebuilt_lines.append("  - \n  - \n")
     rebuilt_lines.append("- Description\n")
-    rebuilt_lines.append(f"  - {desc}\n")
+    if desc:
+        rebuilt_lines.append(f"  - {desc}\n")
+    else:
+        rebuilt_lines.append("  - \n")
 
     Path(file_path).write_text(''.join(rebuilt_lines), encoding='utf-8')
 
 
+
+def _collect_indented_list(lines: List[str], start_idx: int) -> List[str]:
+    """
+    从 start_idx+1 开始收集缩进的 '- item' 条目（例如两格或更多缩进），
+    遇到下一个顶层 '- Something'、'## ' 标题或空行则停止。
+    """
+    items = []
+    j = start_idx + 1
+    while j < len(lines):
+        l = lines[j]
+        # 匹配缩进的列表项（至少一个空格或制表符开头，然后 - item）
+        m = re.match(r'^[ \t]+-\s*(.+?)\s*$', l)
+        if m:
+            val = m.group(1).strip()
+            if val:
+                items.append(val)
+            j += 1
+            continue
+        # 如果是新的顶层 bullet（未缩进的 - Something）或者标题、空行，说明离开该段
+        if re.match(r'^\s*-\s*\S', l) or re.match(r'^\s*##\s+', l) or l.strip() == '':
+            break
+        # 其它普通行也视为离开（安全策略）
+        break
+    return items
+
 def _parse_edit(file_path: str, _id: str, source_path: str) -> str:
     text = Path(file_path).read_text(encoding='utf-8')
-    # 解析语言（不强制需要）
-    # 解析代码块内容
+
+    # 解析代码块内容（第一个 code block）
     code_match = re.search(r"```(?:\[[^\]]*\]|[A-Za-z0-9_+\-]*)\s*\r?\n([\s\S]*?)```", text)
     content = (code_match.group(1) if code_match else '').strip()
-    # tags
-    tag_lines = re.findall(r"^-\s+(.*)$", text, flags=re.M)
-    # 在 '- Tags' 之后的两级缩进项
-    tags_section = False
-    tags = []
-    for line in text.splitlines():
-        if re.match(r"^-\s*Tags\s*$", line):
-            tags_section = True
-            continue
-        if tags_section:
-            m = re.match(r"^\s*-\s*(.*)$", line)
-            if m:
-                val = m.group(1).strip()
-                if val:
-                    tags.append(val)
-            else:
-                # 离开 tags 段
-                tags_section = False
-        # 到 Description 再退出
-        if re.match(r"^-\s*Description\s*$", line):
-            tags_section = False
 
-    desc_match = re.search(r"-\s*Description\s*\n\s*-\s*(.*)", text)
-    description = (desc_match.group(1) if desc_match else '').strip()
+    lines = text.splitlines()
+
+    tags = []
+    description_lines = []
+
+    # 定位 Tags 段并收集缩进子项
+    for i, line in enumerate(lines):
+        if re.match(r'^\s*-\s*Tags\s*$', line):
+            tags = _collect_indented_list(lines, i)
+            break
+
+    # 定位 Description 段并收集缩进子项（支持多行）
+    for i, line in enumerate(lines):
+        if re.match(r'^\s*-\s*Description\s*$', line):
+            description_lines = _collect_indented_list(lines, i)
+            break
+
+    description = ' '.join(description_lines).strip()
 
     entity = {
         "id": _id,
@@ -175,6 +213,7 @@ def _parse_edit(file_path: str, _id: str, source_path: str) -> str:
         "content": content,
     }
     return json.dumps(entity, ensure_ascii=False)
+
 
 
 def _create_tmp(content: str) -> str:
@@ -286,11 +325,11 @@ def edit_and_copy(path: str, id: str) -> ActionResult:
 
 def edit(path: str, id: str) -> ActionResult:
     tmp_path = _create_tmp(template_edit)
-    primary_hash = _calculate_file_sha256(path)
     try:
         _prefill_edit(tmp_path, path, id)
+        primary_hash = _calculate_file_sha256(tmp_path)
         _open_with_nvim(tmp_path)
-        new_hash = _calculate_file_sha256(path)
+        new_hash = _calculate_file_sha256(tmp_path)
         if primary_hash == new_hash:
             return ActionResult(True, "文件未修改")
         edit_json = _parse_edit(tmp_path, id, path)
@@ -328,7 +367,5 @@ def add() -> ActionResult:
 
 
 if __name__ == '__main__':
-    tmp_path = _create_tmp(template_add)
-    _open_with_nvim(tmp_path)
-    add_json = _parse_add(tmp_path)
-    print(add_json)
+    print(_parse_edit("/home/slhaf/Projects/Projects/CodeSnippet/test/testaaa.md", "111test", "111test"))
+

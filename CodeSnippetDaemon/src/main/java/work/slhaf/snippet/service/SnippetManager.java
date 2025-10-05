@@ -32,8 +32,8 @@ public class SnippetManager {
         File file = new File(System.getenv(Constant.Property.DIR));
         HashMap<String, String> map = new HashMap<>();
         for (File f : Objects.requireNonNull(file.listFiles())) {
-            if (f.isDirectory()){
-                listFileStatus(f,map);
+            if (f.isDirectory()) {
+                listFileStatus(f, map);
             }
         }
         return map;
@@ -92,6 +92,11 @@ public class SnippetManager {
 
         Snippet snippet = new Snippet();
         BeanUtil.copyProperties(entity, snippet);
+        FileReader reader = new FileReader(entity.getPath(), StandardCharsets.UTF_8);
+        String s = reader.readAllAsString();
+        Snippet primarySnippet = snippetReader.visit(s);
+        snippet.setLanguage(primarySnippet.getLanguage());
+        reader.close();
 
         Files.move(p, Paths.get(tempPath), StandardCopyOption.REPLACE_EXISTING);
         Files.writeString(p, snippet.toMarkdown(), StandardCharsets.UTF_8);
@@ -118,7 +123,7 @@ public class SnippetManager {
         List<RebuildEntity> list = new ArrayList<>();
         File file = new File(System.getenv(Constant.Property.DIR));
         for (File f : Objects.requireNonNull(file.listFiles())) {
-            listAll(f,list);
+            listAll(f, list);
         }
         return list;
     }
