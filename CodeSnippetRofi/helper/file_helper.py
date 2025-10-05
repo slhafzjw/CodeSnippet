@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from CodeSnippetRofi.common.constant import editor_class, code_snippet_editor
+from common.constant import editor_class, code_snippet_editor
 
 from common.constant import template_add, template_edit
 from entity.result import ActionResult
