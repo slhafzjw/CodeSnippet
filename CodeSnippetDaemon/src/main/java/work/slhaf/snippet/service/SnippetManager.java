@@ -21,6 +21,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 public class SnippetManager {
@@ -30,7 +31,11 @@ public class SnippetManager {
     public HashMap<String, String> getFileStatus() {
         File file = new File(System.getenv(Constant.Property.DIR));
         HashMap<String, String> map = new HashMap<>();
-        listFileStatus(file, map);
+        for (File f : Objects.requireNonNull(file.listFiles())) {
+            if (f.isDirectory()){
+                listFileStatus(f,map);
+            }
+        }
         return map;
     }
 
@@ -112,7 +117,9 @@ public class SnippetManager {
         log.info("获取数据目录[{}]文件信息", System.getenv(Constant.Property.DIR));
         List<RebuildEntity> list = new ArrayList<>();
         File file = new File(System.getenv(Constant.Property.DIR));
-        listAll(file, list);
+        for (File f : Objects.requireNonNull(file.listFiles())) {
+            listAll(f,list);
+        }
         return list;
     }
 
