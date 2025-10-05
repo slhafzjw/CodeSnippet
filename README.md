@@ -11,7 +11,7 @@
 - rofi
 - nc
 - nvim
-  - 推荐装有 Markdown 相关插件
+    - 推荐装有 Markdown 相关插件
 - python3
 - python-rofi
 
@@ -32,47 +32,48 @@
 ### 安装
 1. 下载RELEASE
 2. 下载所需库
-   - `pip install python-rofi`
-2. 解压，目录结构如下:
-    > ![目录结构](doc/resource/dir.png)
+    - `pip install python-rofi`
+3. 安装Java 25(守护进程使用Java 25, 如有需要, 可以自行clone并重新打包)
+4. 解压，目录结构如下:
+   > ![目录结构](doc/resource/dir.png)
 
 ### 使用
 1. 设置环境变量
-   - CODE_SNIPPET_CONF
-     - 配置文件目录
-   - CODE_SNIPPET_DIR
-     - 文件存储目录
-   - CODE_SNIPPET_PORT
-     - TCP服务器端口
-   - CODE_SNIPPET_API_KEY
-     - AI服务商提供的的 api_key
-   - CODE_SNIPPET_BASE_URL
-     - AI服务商提供的 base_url
-   - CODE_SNIPPET_MODEL
-     - 所用模型名称
-   - CODE_SNIPPET_EDITOR (可选，若未指定则使用nvim)
-     - 所用的编辑器，默认使用nvim
-     - Typora 好像也可以编辑，只是会额外打开一个终端窗口
-     - 其他编辑器未测试
-   - CODE_SNIPPET_ROFI (可选，若未指定则使用默认 rofi)
-     - 指定的 rofi 脚本，可以添加参数，比如: `rofi -theme ~/.config/rofi/launchers/type-4/style-1.rasi`
+    - CODE_SNIPPET_CONF
+        - 配置文件目录
+    - CODE_SNIPPET_DIR
+        - 文件存储目录
+    - CODE_SNIPPET_PORT
+        - TCP服务器端口
+    - CODE_SNIPPET_API_KEY
+        - AI服务商提供的的 api_key
+    - CODE_SNIPPET_BASE_URL
+        - AI服务商提供的 base_url
+    - CODE_SNIPPET_MODEL
+        - 所用模型名称
+    - CODE_SNIPPET_EDITOR (可选，若未指定则使用nvim)
+        - 所用的编辑器，默认使用nvim
+        - Typora 好像也可以编辑，只是会额外打开一个终端窗口
+        - 其他编辑器未测试
+    - CODE_SNIPPET_ROFI (可选，若未指定则使用默认 rofi)
+        - 指定的 rofi 脚本，可以添加参数，比如: `rofi -theme ~/.config/rofi/launchers/type-4/style-1.rasi`
 
 2. 启动 Java 守护进程
-   - `java -jar daemon/CodeSnippetDaemon-1.0.jar`
+    - `java -jar daemon/CodeSnippetDaemon-1.0.jar`
 3. 启动 rofi 脚本
-   - `python rofi/launcher.py`
+    - `python rofi/launcher.py`
 
 > 已将打开的编辑器窗口的class属性设置为`code_snippet_editor`，如果使用的是 Hyprland 等 wm，可以据此对打开的编辑器窗口设置所需规则
-> 
+>
 > 该部分只针对一些常见的终端应用进行了设置，如有需要，可以自行编辑文件: [file_helper(第205行开始)](CodeSnippetRofi/helper/file_helper.py)
 
 
 ## 说明
 ### rofi 菜单说明
 - 搜索
-  - 编辑
-  - 编辑并复制
-  - 删除
+    - 编辑
+    - 编辑并复制
+    - 删除
 - 添加
 - 编辑
 - 删除

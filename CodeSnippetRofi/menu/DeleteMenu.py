@@ -8,16 +8,16 @@ class DeleteMenu:
         self._r = r
 
     def run(self):
-        try:
-            result = run_search("")
-        except Exception as e:
-            print(f"Error: {e}")
-            self._r.error(str(e))
-            return
-        if result.status != "SUCCESS":
-            self._r.error(result.data)
-            return
         while True:
+            try:
+                result = run_search("")
+            except Exception as e:
+                print(f"Error: {e}")
+                self._r.error(str(e))
+                return
+            if result.status != "SUCCESS":
+                self._r.error(result.data)
+                return
             if len(result.data) == 0:
                 self._r.select("删除", ["未找到Snippet记录"])
                 break

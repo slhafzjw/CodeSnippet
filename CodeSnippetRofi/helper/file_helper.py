@@ -191,9 +191,7 @@ def _create_tmp(content: str) -> str:
 
 def _open_with_nvim(file_path: str) -> None:
     # 获取终端环境变量，默认为xterm
-    term = os.environ.get('TERMINAL', '')
-    if not term:
-        term = 'xterm'
+    term = os.getenv('TERMINAL', 'xterm')
 
     # 获取终端名称
     name = os.path.basename(term)
